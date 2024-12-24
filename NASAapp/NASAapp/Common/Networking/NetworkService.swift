@@ -36,9 +36,13 @@ class NetworkService: NetworkServiceType {
 
     @discardableResult
     func load<T>(_ resource: Resource<T>) -> AnyPublisher<T, Error> {
-        guard let request = resource.request else {
+        guard var request = resource.request else {
             return .fail(NetworkError.invalidRequest)
         }
+
+        request.url?.append(queryItems: [URLQueryItem(name: "api_key",
+                                                      value: "11uSQUbKvLbf81gXPEcdvtRyGRivnV0XIkigjoRC")])
+        
         return session.dataTaskPublisher(for: request)
             .mapError { _ in NetworkError.invalidRequest }
             .flatMap { data, response -> AnyPublisher<Data, Error> in

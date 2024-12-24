@@ -20,7 +20,7 @@ struct HomeViewModelOutput {
 class HomeViewModel: VCViewModel {
     private var cancellables: [AnyCancellable] = []
     private let feedService: FeedService
-    private var dateInterval: DateInterval = DateInterval(start: Date(), end: Date())
+    private var dateEnd: Date = Date()
     var isLoadingMore = false
     
     var homeSectionViewModels = [HomeSectionViewModel]()
@@ -39,10 +39,10 @@ class HomeViewModel: VCViewModel {
     func transform(input: HomeViewModelInput) -> HomeViewModelOutput {
         let refreshFeed = input.onRefresh
             .flatMapLatest({ [unowned self] _ in
-                dateInterval.start = Date()
-                dateInterval.end = Date()
                 
-                return feedService.getFeedbyDate(dateInterval: dateInterval)
+                dateEnd = Date()
+                
+                return feedService.getFeedbyDate(dateEnd: dateEnd)
             })
             .map({ [unowned self] result -> HomeViewModel.ViewState in
                 switch result {
@@ -70,14 +70,14 @@ class HomeViewModel: VCViewModel {
         let loadMoreFeed = input.onLoadMore
             .flatMapLatest({ [unowned self] _ in
                 isLoadingMore = true
-                dateInterval.start = dateInterval.start.dayBefore
-                dateInterval.end = dateInterval.end.dayBefore
-                
-                return feedService.getFeedbyDate(dateInterval: dateInterval)
+
+                return feedService.getFeedbyDate(dateEnd: dateEnd.dayBefore)
             })
             .map({ [unowned self] result -> HomeViewModel.ViewState in
                 switch result {
                 case .success(let feed):
+                    
+                    dateEnd = dateEnd.dayBefore
                     
                     if let feed = feed,
                        let objects = feed.near_earth_objects {

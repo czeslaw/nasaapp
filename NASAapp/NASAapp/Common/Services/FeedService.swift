@@ -11,8 +11,8 @@ import Combine
 class FeedService: NetworkService {
     private var cancellables = Set<AnyCancellable>()
 
-    func getFeedbyDate(dateInterval: DateInterval) -> AnyPublisher<Result<Feed?, Error>, Never> {
-        return load(Resource<Feed>.feed(dateInterval: dateInterval))
+    func getFeedbyDate(dateEnd: Date) -> AnyPublisher<Result<Feed?, Error>, Never> {
+        return load(Resource<Feed>.feed(dateEnd: dateEnd))
             .map {
                 return .success($0)
             }
@@ -39,12 +39,11 @@ struct NearEarthObjectResponse: Decodable {
 }
 
 extension Resource {
-    static func feed(dateInterval: DateInterval) -> Resource<Feed> {
+    static func feed(dateEnd: Date) -> Resource<Feed> {
         let url = URL(string: Application.shared.environment.rootURL.appending("feed"))!
         let parameters: [String : CustomStringConvertible] = [
-            "start_date": dateInterval.start.apiFormat,
-            "end_date": dateInterval.end.apiFormat,
-            "api_key": "11uSQUbKvLbf81gXPEcdvtRyGRivnV0XIkigjoRC",
+            "start_date": dateEnd.apiFormat,
+            "end_date": dateEnd.apiFormat,
             ]
         return Resource<Feed>(url: url, parameters: parameters)
     }
