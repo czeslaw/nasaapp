@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "NASA-Logo-1975-1992.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
