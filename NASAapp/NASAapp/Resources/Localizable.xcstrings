@@ -1,13 +1,13 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "diameter-km-%@" : {
+    "diameter-m-%@" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "\"diameter: %@ km\""
+            "value" : "diameter: %@ m"
           }
         }
       }

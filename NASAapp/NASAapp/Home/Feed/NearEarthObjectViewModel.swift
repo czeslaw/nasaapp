@@ -17,27 +17,18 @@ struct NearEarthObjectViewModelOutput {
     let viewState: AnyPublisher<NearEarthObjectViewModel.ViewState, Never>
 }
 
-class NearEarthObjectViewModel: VCViewModel {
-    struct NearEarthObjectCellViewModel {
-        let title: String
-        let detail: String
-        
-        static func create(key: String?, value: Any?) -> NearEarthObjectCellViewModel? {
-            guard let key = key,
-                  let value = value as? String else {
-                return nil
-            }
+protocol NearEarthObjectViewModelType: VCViewModel {
+    var nearEarthObject: NearEarthObject { get set }
+    var cellViewModels: [NearEarthObjectCellViewModel] { get set }
+    func transform(input: NearEarthObjectViewModelInput) -> NearEarthObjectViewModelOutput
+    func updateCellViewModels()
+}
 
-            return NearEarthObjectCellViewModel(title: key.replacingOccurrences(of: "_", with: " "),
-                                                detail: value)
-        }
-    }
-    
+class NearEarthObjectViewModel: NearEarthObjectViewModelType {
     private var cancellables: [AnyCancellable] = []
     private let onPressShare = PassthroughSubject<Void, Never>()
-    let feedService: FeedService
+    let feedService: FeedServiceType
     var nearEarthObject: NearEarthObject
-
     var cellViewModels = [NearEarthObjectCellViewModel]()
     
     var title: String {
@@ -49,45 +40,30 @@ class NearEarthObjectViewModel: VCViewModel {
     }
     
     init(nearEarthObject: NearEarthObject,
-         feedService: FeedService) {
+         feedService: FeedServiceType) {
         self.nearEarthObject = nearEarthObject
         self.feedService = feedService
+        updateCellViewModels()
     }
-    
+
     func transform(input: NearEarthObjectViewModelInput) -> NearEarthObjectViewModelOutput {
         let fetchFeed = input.onAppear
-            .flatMapLatest({ [unowned self] query in feedService.getFeedObject(with: "") })
+            .flatMapLatest({ [unowned self] _ in feedService.getFeedObject(with: nearEarthObject.id ?? "") })
             .map({ result -> NearEarthObjectViewModel.ViewState in
                 switch result {
-                case .success(let feed):
-                    
-//                    nearEarthObjects.compactMapKeys( { Date.apiFormatter.date(from: $0)} ))
-                    
-//                    do {
-//                        self.cellViewModels.removeAll()
-//                        let allProperties = try feed.allProperties()
-//
-//                        allProperties.keys.sorted { k1, k2 in
-//                            return k1.compare(k2) == ComparisonResult.orderedAscending
-//                        }
-//                        .forEach { key in
-//                            if let cell = FeedCellViewModel.create(key: key,
-//                                                                    value: allProperties[key]) {
-//                                self.cellViewModels.append(cell)
-//                            }
-//                        }
-//                    } catch _ {
-//
-//                    }
-                    
-                    return .success(feed)
+                case .success(let nearEarthObject):
+                    if let nearEarthObject = nearEarthObject {
+                        self.nearEarthObject = nearEarthObject
+                        self.updateCellViewModels()
+                    }
+                    return .success(nearEarthObject)
                 case .failure(let error):
                     return .failure(error)
                 }
             })
         
         let share = onPressShare
-            .map({ [unowned self] result -> NearEarthObjectViewModel.ViewState in
+            .map({ [unowned self] _ -> NearEarthObjectViewModel.ViewState in
                 return .share(self.nearEarthObject)
             })
 
@@ -98,6 +74,25 @@ class NearEarthObjectViewModel: VCViewModel {
     
     func rightBarButtonItemAction() {
         onPressShare.send()
+    }
+    
+    func updateCellViewModels() {
+        do {
+            self.cellViewModels.removeAll()
+            let allProperties = try self.nearEarthObject.allProperties()
+
+            allProperties.keys.sorted { key1, key2 in
+                return key1.compare(key2) == ComparisonResult.orderedAscending
+            }
+            .forEach { key in
+                if let cell = NearEarthObjectCellViewModel.create(key: key,
+                                                        value: allProperties[key]) {
+                    self.cellViewModels.append(cell)
+                }
+            }
+        } catch _ {
+
+        }
     }
 }
 
@@ -115,5 +110,75 @@ extension NearEarthObjectViewModel {
             default: return false
             }
         }
+    }
+}
+
+// MARK: - Mocks
+
+class NearEarthObjectViewModelMock: NearEarthObjectViewModelType {
+    var nearEarthObject: NearEarthObject = NearEarthObject.empty
+    var cellViewModels: [NearEarthObjectCellViewModel] = [NearEarthObjectCellViewModel]()
+    
+    func transform(input: NearEarthObjectViewModelInput) -> NearEarthObjectViewModelOutput {
+        let mockObject = NearEarthObject.empty
+        
+        let publisher = Just(mockObject)
+            .map { NearEarthObjectViewModel.ViewState.success($0) }
+            .handleEvents(receiveOutput: { [weak self] _ in
+                self?.loadData()
+            })
+            .eraseToAnyPublisher()
+
+        return NearEarthObjectViewModelOutput(viewState: publisher)
+    }
+
+    var mockData: [NearEarthObject] = []
+    var isDataLoaded = false
+
+    func loadData() {
+        self.updateCellViewModels()
+        isDataLoaded = true
+    }
+
+    func numberOfItems() -> Int {
+        return mockData.count
+    }
+
+    func item(at index: Int) -> NearEarthObject {
+        return mockData[index]
+    }
+    
+    func updateCellViewModels() {
+        do {
+            self.cellViewModels.removeAll()
+            let allProperties = try self.nearEarthObject.allProperties()
+
+            allProperties.keys.sorted { key1, key2 in
+                return key1.compare(key2) == ComparisonResult.orderedAscending
+            }
+            .forEach { key in
+                if let cell = NearEarthObjectCellViewModel.create(key: key,
+                                                        value: allProperties[key]) {
+                    self.cellViewModels.append(cell)
+                }
+            }
+        } catch _ {
+
+        }
+    }
+}
+
+struct NearEarthObjectCellViewModel {
+    let title: String
+    let detail: String
+    
+    static func create(key: String?, value: Any?) -> NearEarthObjectCellViewModel? {
+        guard let key = key,
+              let value = value as? String else {
+            return nil
+        }
+
+        return NearEarthObjectCellViewModel(title: key.replacingOccurrences(of: "_", with: " "),
+                                            detail: value)
     }
 }

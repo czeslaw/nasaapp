@@ -17,9 +17,13 @@ struct HomeViewModelOutput {
     let viewState: AnyPublisher<HomeViewModel.ViewState, Never>
 }
 
-class HomeViewModel: VCViewModel {
+protocol HomeViewModelType: VCViewModel {
+    func transform(input: HomeViewModelInput) -> HomeViewModelOutput
+}
+
+class HomeViewModel: HomeViewModelType {
     private var cancellables: [AnyCancellable] = []
-    private let feedService: FeedService
+    private let feedService: FeedServiceType
     private var dateEnd: Date = Date()
     var isLoadingMore = false
     
@@ -32,35 +36,31 @@ class HomeViewModel: VCViewModel {
         return String(localized: "title.home")
     }
     
-    init(feedService: FeedService) {
+    init(feedService: FeedServiceType) {
         self.feedService = feedService
     }
-    
+
     func transform(input: HomeViewModelInput) -> HomeViewModelOutput {
         let refreshFeed = input.onRefresh
             .flatMapLatest({ [unowned self] _ in
-                
                 dateEnd = Date()
-                
                 return feedService.getFeedbyDate(dateEnd: dateEnd)
             })
             .map({ [unowned self] result -> HomeViewModel.ViewState in
                 switch result {
                 case .success(let feed):
+                    guard let feed = feed,
+                        let objects = feed.nearEarthObjects else {
+                            return .failure(NASAError.emptyFeed)
+                          }
                     homeSectionViewModels = [HomeSectionViewModel]()
-                    
-                    if let feed = feed,
-                       let objects = feed.near_earth_objects {
-                        
-                        for key in objects.keys {
-                            if let date = Date.apiFormatter.date(from: key),
-                               let neos = objects[key] {
-                                homeSectionViewModels.append(HomeSectionViewModel(date: date,
-                                                                                  nearEarthObjects: neos))
-                            }
+                    for key in objects.keys {
+                        if let date = Date.apiFormatter.date(from: key),
+                           let neos = objects[key] {
+                            homeSectionViewModels.append(HomeSectionViewModel(date: date,
+                                                                              nearEarthObjects: neos))
                         }
                     }
-                    
                     return .success(homeSectionViewModels)
                 case .failure(let error): return .failure(error)
                 }
@@ -70,37 +70,31 @@ class HomeViewModel: VCViewModel {
         let loadMoreFeed = input.onLoadMore
             .flatMapLatest({ [unowned self] _ in
                 isLoadingMore = true
-
                 return feedService.getFeedbyDate(dateEnd: dateEnd.dayBefore)
             })
-            .map({ [unowned self] result -> HomeViewModel.ViewState in
+            .map({ [unowned self] (result: Result<Feed?, Error>) -> HomeViewModel.ViewState in
                 switch result {
                 case .success(let feed):
-                    
+                    guard let feed = feed,
+                          let objects = feed.nearEarthObjects else {
+                        return .failure(NASAError.emptyFeed)
+                    }
                     dateEnd = dateEnd.dayBefore
-                    
-                    if let feed = feed,
-                       let objects = feed.near_earth_objects {
-                        
-                        for key in objects.keys {
-                            if let date = Date.apiFormatter.date(from: key),
-                               let neos = objects[key] {
-                                homeSectionViewModels.append(HomeSectionViewModel(date: date,
-                                                                                  nearEarthObjects: neos))
-                            }
+                    for key in objects.keys {
+                        if let date = Date.apiFormatter.date(from: key),
+                           let neos = objects[key] {
+                            homeSectionViewModels.append(HomeSectionViewModel(date: date,
+                                                                              nearEarthObjects: neos))
                         }
                     }
-
                     isLoadingMore = false
                     return .success(homeSectionViewModels)
                 case .failure(let error): return .failure(error)
                 }
             })
             .eraseToAnyPublisher()
-        
-        let merge = Publishers.Merge(refreshFeed, loadMoreFeed).eraseToAnyPublisher()
-        
-        return .init(viewState: merge)
+
+        return .init(viewState: Publishers.Merge(refreshFeed, loadMoreFeed).eraseToAnyPublisher())
     }
 }
 
@@ -116,5 +110,18 @@ extension HomeViewModel {
             default: return false
             }
         }
+    }
+}
+
+// MARK: - Mock
+
+class HomeViewModelMock: HomeViewModelType {
+    var homeSectionViewModels: [HomeSectionViewModel] = []
+    var isDataLoaded = false
+
+    func transform(input: HomeViewModelInput) -> HomeViewModelOutput {
+        isDataLoaded = true
+        return HomeViewModelOutput(viewState: Just(.success(homeSectionViewModels))
+            .eraseToAnyPublisher())
     }
 }

@@ -41,12 +41,13 @@ extension VCViewModel {
         
         let button = UIButton(configuration: UIButton.Configuration.plain(),
                               primaryAction: UIAction(image: image,
-                                                      handler: { action in
+                                                      handler: { _ in
             rightBarButtonItemAction()
         }))
 
         return UIBarButtonItem(customView: button)
     }
+
     func rightBarButtonItemAction() {
         
     }

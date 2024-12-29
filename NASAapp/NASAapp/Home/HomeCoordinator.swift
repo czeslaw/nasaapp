@@ -13,13 +13,13 @@ protocol HomeCoordinatorDelegate: AnyObject {
 
 class HomeCoordinator: Coordinator {
     private let navigationController: UINavigationController
-    private let feedService: FeedService
+    private let feedService: FeedServiceType
     var coordinators: [Coordinator] = []
     
     weak var delegate: HomeCoordinatorDelegate?
 
     init(navigationController: UINavigationController,
-         feedService: FeedService) {
+         feedService: FeedServiceType) {
         self.navigationController = navigationController
         self.feedService = feedService
     }
@@ -53,8 +53,9 @@ class HomeCoordinator: Coordinator {
 
 extension HomeCoordinator: HomeViewControllerDelegate {
     func onSelect(nearEarthObject: NearEarthObject) {
-        let nearEarthObjectViewController = NearEarthObjectViewController(viewModel: NearEarthObjectViewModel(nearEarthObject:
-                                                                                                    nearEarthObject, feedService: feedService))
+        let nearEarthObjectViewController =
+        NearEarthObjectViewController(viewModel: NearEarthObjectViewModel(nearEarthObject: nearEarthObject,
+                                                                          feedService: feedService))
         nearEarthObjectViewController.delegate = self
         navigationController.pushViewController(nearEarthObjectViewController, animated: true)
     }
@@ -67,15 +68,12 @@ extension HomeCoordinator: SplashViewControllerDelegate {
 }
 
 extension HomeCoordinator: NearEarthObjectViewControllerDelegate {
-    func didPressShare(nearEarthObject: NearEarthObject, image: UIImage?) {
+    func didPressShare(nearEarthObject: NearEarthObject) {
         var activityItems = [Any]()
         if let name = nearEarthObject.name {
             activityItems.append(name)
         }
-        if let image = image {
-            activityItems.append(image)
-        }
-        if let url = URL(string: nearEarthObject.nasa_jpl_url ?? "") {
+        if let url = URL(string: nearEarthObject.nasaJplUrl ?? "") {
             activityItems.append(url)
         }
 

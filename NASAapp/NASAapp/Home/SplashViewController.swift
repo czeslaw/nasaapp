@@ -42,10 +42,9 @@ class SplashViewController: BaseViewController {
             self.imageView.alpha = 0.0
             self.imageView.transform = self.imageView.transform.scaledBy(x: 3, y: 3)
             
-        } completion: { completed in
+        } completion: { _ in
             self.delegate?.didFinishAnimating()
         }
 
     }
 }
-

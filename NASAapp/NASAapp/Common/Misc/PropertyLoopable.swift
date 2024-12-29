@@ -20,7 +20,7 @@ extension PropertyLoopable {
 
         // Optional check to make sure we're iterating over a struct or class
         guard let style = mirror.displayStyle, style == .struct || style == .class else {
-            throw NSError()
+            throw NASAError.invalidPropertyLoopable
         }
 
         for (property, value) in mirror.children {

@@ -23,7 +23,7 @@ class AppCoordinator: NSObject, Coordinator {
     init(application: Application,
          window: UIWindow) {
 
-        let navigationController: UINavigationController = .withOverridenBarAppearence()
+        let navigationController: UINavigationController = UINavigationController()
         navigationController.view.backgroundColor = Configuration.Color.defaultViewBackground
         
         self.application = application

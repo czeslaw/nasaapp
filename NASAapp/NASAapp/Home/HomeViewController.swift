@@ -12,7 +12,13 @@ protocol HomeViewControllerDelegate: AnyObject {
     func onSelect(nearEarthObject: NearEarthObject)
 }
 
-class HomeViewController: BaseViewController {
+protocol HomeViewControllerType: BaseViewController, UITableViewDelegate, UITableViewDataSource {
+//    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String?
+//    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int
+//    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell
+}
+
+class HomeViewController: BaseViewController, HomeViewControllerType {
     private var cancelables = Set<AnyCancellable>()
     private let onRefresh = PassthroughSubject<Void, Never>()
     private let onLoadMore = PassthroughSubject<Void, Never>()
@@ -33,6 +39,7 @@ class HomeViewController: BaseViewController {
         tableView.separatorStyle = .singleLine
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: UITableViewCell.reuseIdentifier)
         tableView.addSubview(refreshControl)
+        tableView.accessibilityIdentifier = "HomeTableView"
         return tableView
     }()
     private lazy var refreshControl: UIRefreshControl = {
@@ -70,11 +77,11 @@ class HomeViewController: BaseViewController {
         let input = HomeViewModelInput(onRefresh: onRefresh.eraseToAnyPublisher(),
                                        onLoadMore: onLoadMore.eraseToAnyPublisher())
 
-        let output = (viewModel as! HomeViewModel).transform(input: input)
+        let output = (viewModel as! HomeViewModelType).transform(input: input)
         
         output.viewState
             .receive(on: RunLoop.main)
-            .sink(receiveValue: { [unowned self] state in
+            .sink(receiveValue: { [unowned self] _ in
                 tableView.reloadData()
                 removeTableFooterSpinner()
                 refreshControl.endRefreshing()
@@ -87,8 +94,8 @@ class HomeViewController: BaseViewController {
     }
     
     func loadMoreData() {
-        guard let vm = (viewModel as? HomeViewModel),
-              !vm.isLoadingMore else { return }
+        guard let vmd = (viewModel as? HomeViewModel),
+              !vmd.isLoadingMore else { return }
         
         self.addTableFooterSpinner()
         onLoadMore.send()
@@ -110,55 +117,56 @@ extension HomeViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
-        guard let vm = (viewModel as? HomeViewModel),
+        guard let vmd = (viewModel as? HomeViewModel),
               indexPath.section >= 0,
-              indexPath.section < vm.homeSectionViewModels.count,
+              indexPath.section < vmd.homeSectionViewModels.count,
               indexPath.row >= 0,
-              indexPath.row < vm.homeSectionViewModels[indexPath.section].nearEarthObjects.count else {
+              indexPath.row < vmd.homeSectionViewModels[indexPath.section].nearEarthObjects.count else {
             return
         }
 
-        delegate?.onSelect(nearEarthObject: vm.homeSectionViewModels[indexPath.section].nearEarthObjects[indexPath.row])
+        let section = vmd.homeSectionViewModels[indexPath.section]
+        delegate?.onSelect(nearEarthObject: section.nearEarthObjects[indexPath.row])
     }
 }
 
 extension HomeViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        guard let vm = (viewModel as? HomeViewModel),
+        guard let vmd = (viewModel as? HomeViewModel),
               section >= 0,
-              section < vm.homeSectionViewModels.count
+              section < vmd.homeSectionViewModels.count
         else {
             return nil
         }
         
-        return vm.homeSectionViewModels[section].date.apiFormat
+        return vmd.homeSectionViewModels[section].date.apiFormat
     }
     
     func numberOfSections(in tableView: UITableView) -> Int {
-        guard let vm = (viewModel as? HomeViewModel) else {
+        guard let vmd = (viewModel as? HomeViewModel) else {
             return 0
         }
 
-        return vm.homeSectionViewModels.count
+        return vmd.homeSectionViewModels.count
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        guard let vm = (viewModel as? HomeViewModel),
+        guard let vmd = (viewModel as? HomeViewModel),
               section >= 0,
-              section < vm.homeSectionViewModels.count
+              section < vmd.homeSectionViewModels.count
         else {
             return 0
         }
 
-        return vm.homeSectionViewModels[section].nearEarthObjects.count
+        return vmd.homeSectionViewModels[section].nearEarthObjects.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let vm = (viewModel as? HomeViewModel),
+        guard let vmd = (viewModel as? HomeViewModel),
               indexPath.section >= 0,
-              indexPath.section < vm.homeSectionViewModels.count,
+              indexPath.section < vmd.homeSectionViewModels.count,
               indexPath.row >= 0,
-              indexPath.row < vm.homeSectionViewModels[indexPath.section].nearEarthObjects.count
+              indexPath.row < vmd.homeSectionViewModels[indexPath.section].nearEarthObjects.count
         else {
             return UITableViewCell()
         }
@@ -166,7 +174,7 @@ extension HomeViewController: UITableViewDataSource {
         let cell = tableView.dequeueReusableCell(withIdentifier: UITableViewCell.reuseIdentifier, for: indexPath)
         cell.selectionStyle = .none
         
-        let cellVM = vm.homeSectionViewModels[indexPath.section].nearEarthObjects[indexPath.row]
+        let cellVM = vmd.homeSectionViewModels[indexPath.section].nearEarthObjects[indexPath.row]
         
         var config = UIListContentConfiguration.subtitleCell()
         
@@ -178,7 +186,9 @@ extension HomeViewController: UITableViewDataSource {
         
         cell.contentConfiguration = config
         
-        if indexPath.section == vm.homeSectionViewModels.count - 1 {
+        cell.accessibilityIdentifier = "Cell_\(cellVM.name ?? "")"
+        
+        if indexPath.section == vmd.homeSectionViewModels.count - 1 {
             loadMoreData()
         }
         

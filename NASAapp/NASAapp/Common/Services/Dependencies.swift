@@ -12,10 +12,5 @@ protocol DependenciesProvidable: AnyObject {
 }
 
 struct Dependencies {
-    let feedService: FeedService
-    
-    init(feedService: FeedService) {
-
-        self.feedService = feedService
-    }
+    let feedService: FeedServiceType
 }

@@ -7,7 +7,7 @@
 
 import UIKit
 
-fileprivate func colorFrom(trait: UITraitCollection, lightColor: UIColor, darkColor: UIColor) -> UIColor {
+private func colorFrom(trait: UITraitCollection, lightColor: UIColor, darkColor: UIColor) -> UIColor {
     switch trait.userInterfaceStyle {
     case .unspecified, .light:
         return lightColor
@@ -38,9 +38,9 @@ enum Configuration {
         var apiKey: String {
             switch self {
             case .dev:
-                return "DEMO_KEY"
+                return "11uSQUbKvLbf81gXPEcdvtRyGRivnV0XIkigjoRC"
             case .prod:
-                return "DEMO_KEY"
+                return "11uSQUbKvLbf81gXPEcdvtRyGRivnV0XIkigjoRC"
             case .xctests:
                 return "DEMO_KEY"
             }
@@ -83,10 +83,10 @@ enum Configuration {
             return colorFrom(trait: trait, lightColor: separatorColor, darkColor: separatorColor)
         }
  
-        private static let mainTint = UIColor(r: 250, g: 90, b: 40, a: 1)
+        private static let mainTint = UIColor(red: 250, gre: 90, blu: 40, alp: 1)
         private static let separatorColor = UIColor.gray
         private static let backgroundMainTheme = UIColor.white
-        private static let mine = UIColor(r: 227, g: 132, b: 222, a: 1)
+        private static let mine = UIColor(red: 227, gre: 132, blu: 222, alp: 1)
     }
 
     enum Font {

@@ -1,0 +1,13 @@
+excluded:
+  - Carthage
+  - Pods
+
+included:
+  - .
+
+opt_in_rules:
+  - closure_end_indentation
+
+disabled_rules:
+  - force_cast
+  - trailing_whitespace

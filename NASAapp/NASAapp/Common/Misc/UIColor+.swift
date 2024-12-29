@@ -8,10 +8,13 @@
 import UIKit
 
 extension UIColor {
-    convenience init(r: UInt32, g: UInt32, b: UInt32, a: CGFloat = 1.0) {
-        assert(r >= 0 && r <= 255, "Invalid red component")
-        assert(g >= 0 && g <= 255, "Invalid green component")
-        assert(b >= 0 && b <= 255, "Invalid blue component")
-        self.init(red: CGFloat(r)/255.0, green: CGFloat(g)/255.0, blue: CGFloat(b)/255.0, alpha: a)
+    convenience init(red: UInt32, gre: UInt32, blu: UInt32, alp: CGFloat = 1.0) {
+        assert(red >= 0 && red <= 255, "Invalid red component")
+        assert(gre >= 0 && gre <= 255, "Invalid green component")
+        assert(blu >= 0 && blu <= 255, "Invalid blue component")
+        self.init(red: CGFloat(red)/255.0,
+                  green: CGFloat(gre)/255.0,
+                  blue: CGFloat(blu)/255.0,
+                  alpha: alp)
     }
 }

@@ -8,9 +8,6 @@
 import Foundation
 import Combine
 
-import Foundation
-import Combine
-
 protocol NetworkServiceType: AnyObject {
 
     @discardableResult
@@ -41,7 +38,7 @@ class NetworkService: NetworkServiceType {
         }
 
         request.url?.append(queryItems: [URLQueryItem(name: "api_key",
-                                                      value: "11uSQUbKvLbf81gXPEcdvtRyGRivnV0XIkigjoRC")])
+                                                      value: NASAAPIKey)])
         
         return session.dataTaskPublisher(for: request)
             .mapError { _ in NetworkError.invalidRequest }

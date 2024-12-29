@@ -8,7 +8,7 @@
 import Foundation
 import UIKit
 
-fileprivate var searchBarMagnifyingGlassImage: UIImage?
+private var searchBarMagnifyingGlassImage: UIImage?
 
 extension UISearchBar {
     var textField: UITextField? {
@@ -42,8 +42,7 @@ extension UISearchBar {
                     }
                     searchBarImageView?.image = nil
                 }
-            }
-            else {
+            } else {
                 if let cachedMagnifyingGlassImage = searchBarMagnifyingGlassImage {
                     (textField?.leftView as? UIImageView)?.image = cachedMagnifyingGlassImage
                 }

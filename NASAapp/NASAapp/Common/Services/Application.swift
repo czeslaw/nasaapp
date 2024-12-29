@@ -13,7 +13,12 @@ class Application {
     let dependencies: Dependencies
     
     static let shared: Application = {
-        Application()
+        var env = Configuration.Environment.dev
+        if CommandLine.arguments.contains("--UITest") {
+            env = .xctests
+        }
+        
+        return Application(environment: env)
     }()
     
     init(environment: Configuration.Environment = .dev) {
@@ -30,7 +35,7 @@ extension Application: DependenciesProvidable {
         case .prod:
             return Dependencies(feedService: FeedService(NASAAPIKey: environment.apiKey))
         case .xctests:
-            return Dependencies(feedService: FeedService(NASAAPIKey: environment.apiKey))
+            return Dependencies(feedService: FeedServiceMock())
         }
     }
 }

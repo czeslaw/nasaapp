@@ -25,7 +25,6 @@ class ScreenChecker {
 
 extension ScreenChecker {
     static func size(big: CGFloat, small: CGFloat) -> CGFloat {
-        //todo: write more screen sizes variations; include landscape
         if isIPad {
             return big
         }
